@@ -257,7 +257,22 @@ class ConfigCLI:
 def main():
     """主函数"""
     cli = ConfigCLI()
-    cli.run()
+    
+    # 支持命令行参数直接执行命令
+    if len(sys.argv) > 1:
+        command = sys.argv[1]
+        args = sys.argv[2:]
+        if command in cli.commands:
+            try:
+                cli.commands[command](args)
+            except Exception as e:
+                print(f"Error: {e}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            print(f"Unknown command: {command}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        cli.run()
 
 
 if __name__ == '__main__':

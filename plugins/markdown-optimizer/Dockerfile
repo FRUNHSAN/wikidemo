@@ -8,18 +8,27 @@
 # - 零拷贝字符串处理
 # ==========================================
 
-# 阶段1: 构建阶段 - 使用Alpine + gcc（避免Docker Hub镜像拉取问题）
-FROM alpine:3.18 AS builder
+# 单阶段构建：直接在Alpine上编译
+FROM alpine:3.18
 
-# 添加Alpine中国镜像源加速
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
+LABEL maintainer="WikiDemoTongYi Team"
+LABEL description="High-performance Markdown optimizer plugin (C)"
+LABEL version="1.0.0"
 
-RUN apk add --no-cache \
+# 使用阿里云Alpine镜像源（中国大陆可访问）
+RUN echo "https://mirrors.aliyun.com/alpine/v3.18/main" > /etc/apk/repositories && \
+    echo "https://mirrors.aliyun.com/alpine/v3.18/community" >> /etc/apk/repositories && \
+    apk add --no-cache \
     gcc \
     musl-dev \
-    zlib-dev
+    zlib-dev \
+    zlib \
+    tini \
+    wget && \
+    addgroup -g 1001 -S plugin && \
+    adduser -u 1001 -S plugin -G plugin
 
-WORKDIR /build
+WORKDIR /app
 
 # 复制源代码
 COPY . .
@@ -34,39 +43,15 @@ RUN gcc -O3 \
     src/http_server.c \
     -lz \
     -lpthread \
-    -lm
-
-# 阶段2: 运行阶段（极简镜像）
-FROM alpine:3.18
-
-LABEL maintainer="WikiDemoTongYi Team"
-LABEL description="High-performance Markdown optimizer plugin (C)"
-LABEL version="1.0.0"
-
-# 添加Alpine中国镜像源
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
-
-# 安装运行时依赖
-RUN apk add --no-cache \
-    zlib \
-    tini \
-    curl && \
-    addgroup -g 1001 -S plugin && \
-    adduser -u 1001 -S plugin -G plugin
-
-WORKDIR /app
-
-# 复制编译好的二进制文件
-COPY --from=builder /build/markdown-optimizer .
-COPY --chown=plugin:plugin plugin.json .
-
-# 创建数据目录
-RUN mkdir -p /app/data /app/logs && \
+    -lm && \
     chown -R plugin:plugin /app
 
-# 健康检查
+# 创建数据目录
+RUN mkdir -p /app/data /app/logs
+
+# 健康检查（使用wget替代curl）
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
+  CMD wget -q --spider http://localhost:8080/health || exit 1
 
 # 切换到非root用户
 USER plugin
