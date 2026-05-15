@@ -15,6 +15,18 @@ cd wikidemotongyi
 
 ## 🚀 一键启动
 
+### 中国大陆用户先配置镜像加速器
+
+```bash
+# Windows PowerShell
+.\scripts\setup-docker-mirror.ps1
+
+# Linux/WSL
+sudo ./scripts/setup-docker-mirror.sh
+```
+
+### 启动项目
+
 ```bash
 # 克隆项目
 git clone https://github.com/wikidemotongyi/wikidemotongyi.git

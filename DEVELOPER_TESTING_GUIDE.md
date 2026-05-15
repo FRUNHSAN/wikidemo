@@ -72,6 +72,61 @@ git clone https://github.com/wikidemotongyi/wikidemotongyi.git
 cd wikidemotongyi
 ```
 
+### 配置Docker镜像加速器（中国大陆用户必选）
+
+**重要**: 在中国大陆访问Docker Hub可能遇到网络超时问题，需要先配置镜像加速器。
+
+#### 自动配置（推荐）
+
+**Windows PowerShell:**
+```powershell
+.\scripts\setup-docker-mirror.ps1
+```
+
+**Linux/WSL:**
+```bash
+sudo ./scripts/setup-docker-mirror.sh
+```
+
+#### 手动配置
+
+1. **Windows Docker Desktop**:
+   - Settings → Docker Engine
+   - 添加配置：
+   ```json
+   {
+     "registry-mirrors": [
+       "https://docker.m.daocloud.io",
+       "https://huecker.io",
+       "https://dockerhub.timeweb.cloud"
+     ]
+   }
+   ```
+   - Apply & restart
+
+2. **Linux**:
+   ```bash
+   sudo tee /etc/docker/daemon.json <<'EOF'
+   {
+     "registry-mirrors": [
+       "https://docker.m.daocloud.io",
+       "https://huecker.io",
+       "https://dockerhub.timeweb.cloud"
+     ]
+   }
+   EOF
+   sudo systemctl restart docker
+   ```
+
+3. **验证配置**:
+   ```bash
+   docker info | grep -A 3 "Registry Mirrors"
+   ```
+
+详细配置指南：[docs/DOCKER_MIRROR_SETUP.md](docs/DOCKER_MIRROR_SETUP.md)
+
+---
+
 ### 配置环境变量（可选）
 
 ```bash

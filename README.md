@@ -89,7 +89,41 @@ git clone https://github.com/your-username/wikidemotongyi.git
 cd wikidemotongyi
 ```
 
-### 2. 配置环境变量（可选）
+### 2. 配置Docker镜像加速器（中国大陆用户必选）
+
+**重要**: 在中国大陆访问Docker Hub可能遇到网络问题，需要先配置镜像加速器。
+
+#### 快速配置（推荐）
+
+**Windows PowerShell:**
+```powershell
+.\scripts\setup-docker-mirror.ps1
+```
+
+**Linux/WSL:**
+```bash
+sudo ./scripts/setup-docker-mirror.sh
+```
+
+#### 手动配置
+
+编辑Docker Desktop配置（Settings → Docker Engine），添加：
+
+```json
+{
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io",
+    "https://huecker.io",
+    "https://dockerhub.timeweb.cloud"
+  ]
+}
+```
+
+详细配置指南请查看：[DOCKER_MIRROR_SETUP.md](docs/DOCKER_MIRROR_SETUP.md)
+
+---
+
+### 3. 配置环境变量（可选）
 
 ```bash
 # 复制环境配置模板
@@ -105,7 +139,7 @@ notepad .env  # Windows
 - `GIT_REPO_URL` - Git仓库地址（用于自动备份）
 - `OPENAI_API_KEY` - OpenAI API密钥（用于AI摘要）
 
-### 3. 运行测试（推荐）
+### 4. 运行测试（推荐）
 
 ```bash
 # 赋予执行权限
@@ -126,7 +160,7 @@ chmod +x scripts/run-all-tests.sh
 
 详见 [DEVELOPER_TESTING_GUIDE.md](DEVELOPER_TESTING_GUIDE.md)
 
-### 4. 启动服务
+### 5. 启动服务
 
 **Linux/macOS:**
 ```bash
