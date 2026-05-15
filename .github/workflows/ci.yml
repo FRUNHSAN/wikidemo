@@ -118,10 +118,10 @@ jobs:
         done
 
   # ==========================================
-  # 4. 构建Docker镜像
+  # 4. 集成测试准备
   # ==========================================
-  build-images:
-    name: Build Docker Images
+  prepare-test:
+    name: Prepare Test Environment
     runs-on: ubuntu-latest
     needs: [lint, validate-compose]
     
@@ -139,21 +139,27 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-buildx-
     
-    - name: Build Wiki.js stack
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        file: ./docker-compose.yml
-        push: false
-        load: true
-        tags: wiki-stack:test
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+    - name: Pull base images
+      run: |
+        docker compose pull db wiki nginx || true
+        echo "✅ Base images pulled"
+    
+    - name: Build custom plugin images
+      run: |
+        # 构建C语言插件镜像（如果有Dockerfile）
+        if [ -f "plugins/markdown-optimizer/Dockerfile" ]; then
+          docker build -t wikidemotongyi/plugin-markdown-optimizer:latest \
+            -f plugins/markdown-optimizer/Dockerfile \
+            plugins/markdown-optimizer
+          echo "✅ Plugin image built"
+        else
+          echo "⚠️ No plugin Dockerfile found, skipping"
+        fi
     
     - name: Move cache
       run: |
         rm -rf /tmp/.buildx-cache
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache 2>/dev/null || true
 
   # ==========================================
   # 5. 集成测试
@@ -161,27 +167,30 @@ jobs:
   integration-test:
     name: Integration Tests
     runs-on: ubuntu-latest
-    needs: [build-images]
+    needs: [prepare-test]
     
     steps:
     - uses: actions/checkout@v3
     
-    - name: Start services
+    - name: Start core services
       run: |
-        docker compose up -d db wiki
-        sleep 30  # 等待服务启动
+        docker compose up -d db wiki nginx
+        echo "Waiting for services to start..."
+        sleep 30
     
     - name: Check service health
       run: |
         docker compose ps
-        docker compose logs db | tail -20
-        docker compose logs wiki | tail -20
+        echo "--- DB Logs ---"
+        docker compose logs --tail=20 db
+        echo "--- Wiki Logs ---"
+        docker compose logs --tail=20 wiki
     
     - name: Test Wiki.js accessibility
       run: |
         # 等待Wiki.js完全启动
         for i in {1..30}; do
-          if curl -s http://localhost:3000 > /dev/null; then
+          if curl -s http://localhost:80 > /dev/null 2>&1 || curl -s http://localhost:3000 > /dev/null 2>&1; then
             echo "✅ Wiki.js is accessible"
             exit 0
           fi
@@ -189,6 +198,29 @@ jobs:
           sleep 5
         done
         echo "❌ Wiki.js failed to start"
+        docker compose logs wiki
+        exit 1
+    
+    - name: Start plugin services
+      run: |
+        docker compose --profile plugins up -d markdown-optimizer
+        sleep 15
+        echo "✅ Plugin services started"
+    
+    - name: Test plugin health check
+      run: |
+        # 测试健康检查端点
+        for i in {1..10}; do
+          if curl -s http://localhost:8081/health > /dev/null 2>&1; then
+            echo "✅ Plugin health check passed"
+            curl -s http://localhost:8081/health
+            exit 0
+          fi
+          echo "Waiting for plugin... ($i/10)"
+          sleep 5
+        done
+        echo "❌ Plugin health check failed"
+        docker compose logs markdown-optimizer
         exit 1
     
     - name: Stop services
@@ -221,20 +253,22 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Extract metadata
+    - name: Extract metadata for plugin
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
+        images: ${{ env.DOCKER_REGISTRY }}/wikidemotongyi/plugin-markdown-optimizer
         tags: |
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
           type=sha
     
-    - name: Build and push
+    - name: Build and push plugin image
+      if: hashFiles('plugins/markdown-optimizer/Dockerfile') != ''
       uses: docker/build-push-action@v4
       with:
-        context: .
+        context: ./plugins/markdown-optimizer
+        file: ./plugins/markdown-optimizer/Dockerfile
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
