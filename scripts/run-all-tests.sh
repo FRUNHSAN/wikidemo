@@ -273,9 +273,10 @@ fi
 
 # 测试5.3: 日志收集
 print_test "日志收集功能"
-LOG_COUNT=$(python3 log-manager/log_cli.py list 2>/dev/null | grep -c "\.log" || echo "0")
-if [ "$LOG_COUNT" -gt 0 ]; then
-    echo -e "${GREEN}✓${NC} 收集到$LOG_COUNT个日志文件"
+LOG_COUNT=$(python3 log-manager/log_cli.py list 2>/dev/null | grep -c "\.log" || true)
+LOG_COUNT=$(echo "$LOG_COUNT" | tr -d '[:space:]' | head -1)
+if [ -n "$LOG_COUNT" ] && [ "$LOG_COUNT" -gt 0 ] 2>/dev/null; then
+    echo -e "${GREEN}✓${NC} 收集到${LOG_COUNT}个日志文件"
     print_pass
 else
     print_fail "未收集到日志"

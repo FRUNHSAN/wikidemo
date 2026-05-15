@@ -8,25 +8,24 @@
 # - 零拷贝字符串处理
 # ==========================================
 
-# 阶段1: 构建阶段
-FROM gcc:12-alpine AS builder
+# 阶段1: 构建阶段 - 使用Alpine + gcc（避免Docker Hub镜像拉取问题）
+FROM alpine:3.18 AS builder
+
+# 添加Alpine中国镜像源加速
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 
 RUN apk add --no-cache \
-    make \
-    cmake \
-    zlib-dev \
+    gcc \
     musl-dev \
-    linux-headers
+    zlib-dev
 
 WORKDIR /build
 
 # 复制源代码
 COPY . .
 
-# 编译（启用优化和SIMD指令）
-RUN gcc -O3 -march=native -mtune=native \
-    -ffast-math \
-    -flto \
+# 编译（启用优化）
+RUN gcc -O3 \
     -o markdown-optimizer \
     src/main.c \
     src/markdown_parser.c \
@@ -43,6 +42,9 @@ FROM alpine:3.18
 LABEL maintainer="WikiDemoTongYi Team"
 LABEL description="High-performance Markdown optimizer plugin (C)"
 LABEL version="1.0.0"
+
+# 添加Alpine中国镜像源
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 
 # 安装运行时依赖
 RUN apk add --no-cache \
