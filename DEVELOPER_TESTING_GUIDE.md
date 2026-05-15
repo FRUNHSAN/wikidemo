@@ -2,49 +2,48 @@
 
 ## 📋 目录
 
-1. [跨平台说明](#跨平台说明)
-2. [环境准备](#环境准备)
-3. [完整测试链条](#完整测试链条)
-4. [分步测试指南](#分步测试指南)
-5. [日志查看命令](#日志查看命令)
-6. [故障排查](#故障排查)
-7. [性能基准测试](#性能基准测试)
+1. [环境准备](#环境准备)
+2. [完整测试链条](#完整测试链条)
+3. [分步测试指南](#分步测试指南)
+4. [日志查看命令](#日志查看命令)
+5. [故障排查](#故障排查)
+6. [性能基准测试](#性能基准测试)
 
 ---
 
-## 💻 跨平台说明
+## ⚠️ Windows用户重要提示
 
-### 选择适合你的测试方式
+**本项目推荐使用WSL（Windows Subsystem for Linux）环境运行**
 
-| 环境 | 测试脚本 | 启动命令 | 适用场景 |
-|------|---------|---------|---------|
-| **Windows PowerShell** | `scripts/run-all-tests.ps1` | `.\deploy.bat start` | Windows原生环境 |
-| **WSL / Linux** | `scripts/run-all-tests.sh` | `./deploy.sh start` | WSL或Linux系统 |
-| **macOS** | `scripts/run-all-tests.sh` | `./deploy.sh start` | macOS系统 |
+### 为什么？
 
-### ⚡ 性能建议
+- ✅ **性能**: WSL文件系统比/mnt/f快10倍+
+- ✅ **兼容性**: Bash脚本100%兼容
+- ✅ **Docker**: 集成更稳定
 
-**Windows用户：**
+### 快速设置
 
-```powershell
-# ❌ 不推荐：项目在Windows盘，WSL访问（性能差）
-/mnt/f/wikidemotongyi/
-
-# ✅ 推荐：项目迁移到WSL文件系统（性能好10倍+）
-~/projects/wikidemotongyi/
-```
-
-**迁移步骤：**
 ```bash
-# 在WSL中执行
+# 1. 打开WSL
+wsl
+
+# 2. 迁移项目到WSL文件系统
 mkdir -p ~/projects
 cd ~/projects
 git clone https://github.com/wikidemotongyi/wikidemotongyi.git
 cd wikidemotongyi
+
+# 3. 运行测试
+chmod +x scripts/run-all-tests.sh
 ./scripts/run-all-tests.sh
 ```
 
-📖 **详细指南**: [docs/CROSS_PLATFORM_SETUP.md](docs/CROSS_PLATFORM_SETUP.md)
+### 从Windows访问WSL文件
+
+在VSCode中安装"Remote - WSL"扩展，或通过文件资源管理器访问：
+```
+\\wsl$\Ubuntu\home\你的用户名\projects\wikidemotongyi
+```
 
 ---
 
@@ -86,16 +85,7 @@ notepad .env  # Windows
 
 ## 🚀 完整测试链条
 
-### 方式一：一键测试脚本（推荐 ⭐）
-
-#### Windows PowerShell用户
-
-```powershell
-# 运行完整测试套件（约5-10分钟）
-.\scripts\run-all-tests.ps1
-```
-
-#### WSL / Linux / macOS用户
+### 一键测试脚本（推荐 ⭐）
 
 ```bash
 # 赋予执行权限

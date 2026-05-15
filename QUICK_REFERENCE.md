@@ -1,5 +1,18 @@
 # WikiDemoTongYi v1.0.0 快速参考卡片
 
+## ⚠️ Windows用户提示
+
+**推荐使用WSL运行本项目**
+
+```bash
+# 在WSL中执行
+wsl
+mkdir -p ~/projects && cd ~/projects
+git clone https://github.com/wikidemotongyi/wikidemotongyi.git
+cd wikidemotongyi
+./scripts/run-all-tests.sh
+```
+
 ## 🚀 一键启动
 
 ```bash

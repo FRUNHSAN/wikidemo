@@ -47,22 +47,38 @@
 
 - **Docker**: 20.10+
 - **Docker Compose**: V2
-- **操作系统**: Linux / Windows / macOS
+- **操作系统**: Linux / WSL (Windows Subsystem for Linux) / macOS
 - **内存**: 建议 2GB+
 - **磁盘**: 建议 10GB+ (含数据备份)
 - **IPv6**: 可选，但推荐启用
 
-### 💻 跨平台说明
+### ⚠️ Windows用户重要提示
 
-**Windows用户注意：**
+**推荐使用WSL环境运行本项目**
 
-本项目提供两种测试脚本：
-- **PowerShell版本**: `scripts/run-all-tests.ps1` - 适用于Windows
-- **Bash版本**: `scripts/run-all-tests.sh` - 适用于WSL/Linux/macOS
+```bash
+# ❌ 不推荐：直接在Windows PowerShell中运行
+# 性能较差，脚本兼容性差
 
-**性能建议：**
-- 🚀 **最佳性能**: 将项目放在WSL文件系统（~/projects/）而非Windows盘（/mnt/f/）
-- 📖 详细配置指南: [docs/CROSS_PLATFORM_SETUP.md](docs/CROSS_PLATFORM_SETUP.md)
+# ✅ 推荐：在WSL中运行
+wsl
+cd ~/projects/wikidemotongyi
+./scripts/run-all-tests.sh
+```
+
+**为什么推荐WSL？**
+- 🚀 性能提升10倍+（相比/mnt/f路径）
+- ✅ 完整的Linux环境，脚本100%兼容
+- 🐳 Docker集成更好
+
+**快速迁移到WSL：**
+```bash
+# 在WSL中执行
+mkdir -p ~/projects && cd ~/projects
+git clone https://github.com/your-username/wikidemotongyi.git
+cd wikidemotongyi
+./scripts/run-all-tests.sh
+```
 
 ## 🚀 快速开始
 
