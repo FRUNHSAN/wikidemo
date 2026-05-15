@@ -223,7 +223,7 @@ fi
 
 # 测试3.2: C语言插件健康检查
 print_test "C语言插件健康检查"
-HEALTH_RESPONSE=$(curl -s http://localhost:8080/health 2>/dev/null || echo "")
+HEALTH_RESPONSE=$(curl -s http://localhost:8081/health 2>/dev/null || echo "")
 if echo "$HEALTH_RESPONSE" | grep -q "healthy"; then
     echo -e "${GREEN}✓${NC} 服务正常"
     print_pass
@@ -233,7 +233,7 @@ fi
 
 # 测试3.3: Markdown解析API
 print_test "Markdown解析API"
-PARSE_RESPONSE=$(curl -s -X POST http://localhost:8080/api/parse \
+PARSE_RESPONSE=$(curl -s -X POST http://localhost:8081/api/parse \
     -H "Content-Type: application/json" \
     -d '{"markdown": "# Test\n**Bold**"}' 2>/dev/null || echo "")
 if echo "$PARSE_RESPONSE" | grep -q "success.*true"; then
@@ -245,7 +245,7 @@ fi
 
 # 测试3.4: 性能基准测试
 print_test "C语言插件性能测试"
-BENCH_RESPONSE=$(curl -s -X POST http://localhost:8080/api/benchmark 2>/dev/null || echo "{}")
+BENCH_RESPONSE=$(curl -s -X POST http://localhost:8081/api/benchmark 2>/dev/null || echo "{}")
 OPS_PER_SEC=$(echo "$BENCH_RESPONSE" | $PYTHON_CMD -c "import sys,json; print(json.load(sys.stdin).get('ops_per_second', 0))" 2>/dev/null || echo "0")
 if [ "$(echo "$OPS_PER_SEC > 1000" | bc)" -eq 1 ]; then
     echo -e "${GREEN}✓${NC} QPS: $OPS_PER_SEC"

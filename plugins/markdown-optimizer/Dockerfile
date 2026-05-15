@@ -33,8 +33,8 @@ WORKDIR /app
 # 复制源代码
 COPY . .
 
-# 编译（启用优化）
-RUN gcc -O3 \
+# 编译（禁用优化以便调试）
+RUN gcc -O0 -g \
     -o markdown-optimizer \
     src/main.c \
     src/markdown_parser.c \
@@ -49,9 +49,9 @@ RUN gcc -O3 \
 # 创建数据目录
 RUN mkdir -p /app/data /app/logs
 
-# 健康检查（使用wget替代curl）
+# 健康检查（使用wget替代curl，使用IPv4回环避免在IPv6优先环境失败）
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -q --spider http://localhost:8080/health || exit 1
+  CMD wget -q --spider http://127.0.0.1:8080/health || exit 1
 
 # 切换到非root用户
 USER plugin

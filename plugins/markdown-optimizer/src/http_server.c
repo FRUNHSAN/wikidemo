@@ -69,13 +69,50 @@ static void send_json_response(int client_fd, int status_code, const char* json)
     send_response(client_fd, status_code, "application/json", json);
 }
 
+// 将字符串转义为 JSON 字符串值（返回 malloc 分配的字符串，调用者负责 free）
+static char* json_escape(const char* s, size_t len) {
+    size_t cap = len * 2 + 1;
+    char* out = (char*)malloc(cap);
+    if (!out) return NULL;
+    size_t pos = 0;
+
+    for (size_t i = 0; i < len; i++) {
+        unsigned char c = (unsigned char)s[i];
+        if (c == '\\' || c == '"') {
+            if (pos + 2 >= cap) { cap *= 2; out = (char*)realloc(out, cap); if (!out) return NULL; }
+            out[pos++] = '\\';
+            out[pos++] = c;
+        } else if (c == '\n') {
+            if (pos + 2 >= cap) { cap *= 2; out = (char*)realloc(out, cap); if (!out) return NULL; }
+            out[pos++] = '\\'; out[pos++] = 'n';
+        } else if (c == '\r') {
+            if (pos + 2 >= cap) { cap *= 2; out = (char*)realloc(out, cap); if (!out) return NULL; }
+            out[pos++] = '\\'; out[pos++] = 'r';
+        } else if (c == '\t') {
+            if (pos + 2 >= cap) { cap *= 2; out = (char*)realloc(out, cap); if (!out) return NULL; }
+            out[pos++] = '\\'; out[pos++] = 't';
+        } else if (c < 0x20) {
+            // 控制字符，使用 \u00XX 格式
+            if (pos + 6 >= cap) { cap *= 2; out = (char*)realloc(out, cap); if (!out) return NULL; }
+            int n = snprintf(out + pos, 7, "\\u%04x", c);
+            pos += n;
+        } else {
+            if (pos + 1 >= cap) { cap *= 2; out = (char*)realloc(out, cap); if (!out) return NULL; }
+            out[pos++] = c;
+        }
+    }
+
+    out[pos] = '\0';
+    return out;
+}
+
 /**
  * 解析HTTP请求行
  */
 static int parse_request(const char* request, char* method, char* path, 
                         char* body, int body_size) {
-    // 解析方法
-    sscanf(request, "%s", method);
+    // 解析方法（限制长度防止溢出）
+    sscanf(request, "%15s", method);
     
     // 解析路径
     const char* path_start = strchr(request, ' ');
@@ -83,9 +120,14 @@ static int parse_request(const char* request, char* method, char* path,
     path_start++;
     
     const char* path_end = strchr(path_start, ' ');
-    if (!path_end) return -1;
+    if (!path_end) {
+        // 如果没有第二个空格，可能是HTTP/1.0格式，查找换行符
+        path_end = strstr(path_start, "\r\n");
+        if (!path_end) return -1;
+    }
     
     size_t path_len = path_end - path_start;
+    if (path_len >= 256) path_len = 255;  // 防止溢出
     strncpy(path, path_start, path_len);
     path[path_len] = '\0';
     
@@ -150,18 +192,27 @@ static void handle_parse(int client_fd, const char* body) {
     long long elapsed = current_time_ms() - start;
     
     if (html) {
-        // 构建JSON响应
+        // 构建JSON响应（对HTML进行转义，避免破坏JSON格式）
+        char* esc = json_escape(html, html_len);
+        if (!esc) {
+            send_json_response(client_fd, 500, "{\"error\":\"Internal error\"}");
+            free(html);
+            free(markdown);
+            return;
+        }
+
         char response[BUFFER_SIZE];
         snprintf(response, sizeof(response),
-            "{\"success\":true,\"html\":\"%.*s\",\"processing_time_ms\":%lld}",
-            (int)html_len, html, elapsed);
-        
+            "{\"success\":true,\"html\":\"%s\",\"processing_time_ms\":%lld}",
+            esc, elapsed);
+
         send_json_response(client_fd, 200, response);
+        free(esc);
         free(html);
     } else {
         send_json_response(client_fd, 500, "{\"error\":\"Parse failed\"}");
     }
-    
+
     free(markdown);
 }
 
@@ -247,33 +298,62 @@ void* handle_client(void* arg) {
     buffer[bytes_read] = '\0';
     
     // 解析请求
-    char method[16], path[256], body[BUFFER_SIZE];
-    if (parse_request(buffer, method, path, body, sizeof(body)) != 0) {
-        send_json_response(client_fd, 400, "{\"error\":\"Invalid request\"}");
+    char method[16], path[256];
+    char* body = (char*)malloc(BUFFER_SIZE);
+    if (!body) {
         close(client_fd);
         return NULL;
     }
     
-    // 路由处理
+    if (parse_request(buffer, method, path, body, BUFFER_SIZE) != 0) {
+        send_json_response(client_fd, 400, "{\"error\":\"Invalid request\"}");
+        free(body);
+        close(client_fd);
+        return NULL;
+    }
+    
+    // 路由处理（支持GET、POST和HEAD方法）
     if (strcmp(path, "/health") == 0 || strcmp(path, "/healthz") == 0) {
         handle_health(client_fd);
     }
-    else if (strcmp(path, "/api/parse") == 0 && strcmp(method, "POST") == 0) {
-        handle_parse(client_fd, body);
+    else if ((strcmp(path, "/api/parse") == 0) && 
+             (strcmp(method, "POST") == 0 || strcmp(method, "HEAD") == 0)) {
+        if (strcmp(method, "HEAD") == 0) {
+            // HEAD请求只返回头部，不返回body
+            send_json_response(client_fd, 200, "{}");
+        } else {
+            handle_parse(client_fd, body);
+        }
     }
-    else if (strcmp(path, "/api/index") == 0 && strcmp(method, "POST") == 0) {
-        handle_index(client_fd, body);
+    else if ((strcmp(path, "/api/index") == 0) && 
+             (strcmp(method, "POST") == 0 || strcmp(method, "HEAD") == 0)) {
+        if (strcmp(method, "HEAD") == 0) {
+            send_json_response(client_fd, 200, "{}");
+        } else {
+            handle_index(client_fd, body);
+        }
     }
-    else if (strcmp(path, "/api/dedup") == 0 && strcmp(method, "POST") == 0) {
-        handle_dedup(client_fd, body);
+    else if ((strcmp(path, "/api/dedup") == 0) && 
+             (strcmp(method, "POST") == 0 || strcmp(method, "HEAD") == 0)) {
+        if (strcmp(method, "HEAD") == 0) {
+            send_json_response(client_fd, 200, "{}");
+        } else {
+            handle_dedup(client_fd, body);
+        }
     }
-    else if (strcmp(path, "/api/benchmark") == 0) {
-        handle_benchmark(client_fd, body);
+    else if ((strcmp(path, "/api/benchmark") == 0) &&
+             (strcmp(method, "GET") == 0 || strcmp(method, "POST") == 0 || strcmp(method, "HEAD") == 0)) {
+        if (strcmp(method, "HEAD") == 0) {
+            send_json_response(client_fd, 200, "{}");
+        } else {
+            handle_benchmark(client_fd, body);
+        }
     }
     else {
         send_json_response(client_fd, 404, "{\"error\":\"Not found\"}");
     }
     
+    free(body);
     close(client_fd);
     return NULL;
 }
@@ -313,27 +393,41 @@ int start_http_server(int port) {
     }
     
     printf("[HTTP] Server listening on port %d\n", port);
+    fflush(stdout);
     
     // 接受连接循环
     while (1) {
         struct sockaddr_in client_addr;
         socklen_t client_len = sizeof(client_addr);
         
+        printf("[HTTP DEBUG] Waiting for connection...\n");
+        fflush(stdout);
+        
         int* client_fd = malloc(sizeof(int));
         *client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
         
         if (*client_fd < 0) {
-            perror("Accept failed");
+            perror("[HTTP ERROR] Accept failed");
             free(client_fd);
             continue;
         }
         
+        printf("[HTTP DEBUG] Connection accepted, fd=%d\n", *client_fd);
+        fflush(stdout);
+        
         // 创建线程处理客户端
         pthread_t thread;
-        pthread_create(&thread, NULL, handle_client, client_fd);
+        if (pthread_create(&thread, NULL, handle_client, client_fd) != 0) {
+            perror("[HTTP ERROR] Thread creation failed");
+            close(*client_fd);
+            free(client_fd);
+            continue;
+        }
         pthread_detach(thread);
     }
     
+    printf("[HTTP] Server loop exited (this should not happen)\n");
+    fflush(stdout);
     close(server_fd);
     return 0;
 }

@@ -14,9 +14,9 @@
 #include <stdint.h>
 #include <ctype.h>
 
-// 最大词汇量
-#define MAX_VOCAB_SIZE 100000
-#define MAX_POSTING_LIST 1000
+// 最大词汇量（降低以避免内存溢出，128MB限制下约需8MB）
+#define MAX_VOCAB_SIZE 1000
+#define MAX_POSTING_LIST 100
 
 // 倒排索引项
 typedef struct {

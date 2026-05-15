@@ -61,15 +61,15 @@ void load_config_from_env() {
  */
 void print_startup_info() {
     printf("\n");
-    printf("╔═══════════════════════════════════════════════════════════╗\n");
-    printf("║         Markdown Optimizer Plugin v1.0.0                ║\n");
-    printf("║         High-Performance C Engine                       ║\n");
-    printf("╠═══════════════════════════════════════════════════════════╣\n");
-    printf("║ Port:        %-45d ║\n", g_config.port);
-    printf("║ Threads:     %-45d ║\n", g_config.max_threads);
-    printf("║ Cache:       %-43d MB ║\n", g_config.cache_size_mb);
-    printf("║ Log Level:   %-45s ║\n", g_config.log_level);
-    printf("╚═══════════════════════════════════════════════════════════╝\n");
+    printf("===========================================================\n");
+    printf("         Markdown Optimizer Plugin v1.0.0                \n");
+    printf("         High-Performance C Engine                       \n");
+    printf("===========================================================\n");
+    printf(" Port:        %-45d\n", g_config.port);
+    printf(" Threads:     %-45d\n", g_config.max_threads);
+    printf(" Cache:       %-43d MB\n", g_config.cache_size_mb);
+    printf(" Log Level:   %-45s\n", g_config.log_level);
+    printf("===========================================================\n");
     printf("\n");
 }
 
@@ -127,5 +127,4 @@ int main(int argc, char* argv[]) {
     // 清理资源
     cleanup_all();
     
-    return ret == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }
