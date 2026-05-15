@@ -9,6 +9,14 @@
 
 set -e
 
+# 检测可用的Python命令（WSL中python3可能指向Windows Store存根）
+PYTHON_CMD="python3"
+if command -v python3 &> /dev/null && python3 -c "print('ok')" &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null && python -c "print('ok')" &> /dev/null; then
+    PYTHON_CMD="python"
+fi
+
 # 颜色定义
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -55,6 +63,7 @@ cleanup() {
     print_header "清理测试环境"
     
     echo "停止所有服务..."
+    docker compose --profile plugins down -v 2>/dev/null || true
     docker compose down -v 2>/dev/null || true
     
     echo "清理未使用的镜像和卷..."
@@ -65,6 +74,17 @@ cleanup() {
 
 # 捕获Ctrl+C
 trap cleanup EXIT
+
+# 检测可用的Python命令（WSL中python3可能指向Windows Store存根）
+PYTHON_CMD="python3"
+if command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+fi
+# 验证Python命令是否真正可用
+if ! $PYTHON_CMD -c "import sys" 2>/dev/null; then
+    echo -e "${YELLOW}⚠${NC} 警告: Python命令不可用，部分测试将跳过"
+    PYTHON_CMD=""
+fi
 
 # ==========================================
 # 阶段1: 环境检查
@@ -226,7 +246,7 @@ fi
 # 测试3.4: 性能基准测试
 print_test "C语言插件性能测试"
 BENCH_RESPONSE=$(curl -s -X POST http://localhost:8080/api/benchmark 2>/dev/null || echo "{}")
-OPS_PER_SEC=$(echo "$BENCH_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('ops_per_second', 0))" 2>/dev/null || echo "0")
+OPS_PER_SEC=$(echo "$BENCH_RESPONSE" | $PYTHON_CMD -c "import sys,json; print(json.load(sys.stdin).get('ops_per_second', 0))" 2>/dev/null || echo "0")
 if [ "$(echo "$OPS_PER_SEC > 1000" | bc)" -eq 1 ]; then
     echo -e "${GREEN}✓${NC} QPS: $OPS_PER_SEC"
     print_pass
@@ -257,7 +277,7 @@ fi
 
 # 测试4.2: CLI工具测试
 print_test "配置CLI工具"
-if python3 config-manager/config_cli.py list >/dev/null 2>&1; then
+if $PYTHON_CMD config-manager/config_cli.py list >/dev/null 2>&1; then
     print_pass
 else
     print_fail "CLI工具执行失败"
@@ -280,15 +300,20 @@ fi
 
 # 测试5.2: 日志CLI工具
 print_test "日志CLI工具"
-if python3 log-manager/log_cli.py list >/dev/null 2>&1; then
+if $PYTHON_CMD log-manager/log_cli.py list >/dev/null 2>&1; then
     print_pass
 else
     print_fail "CLI工具执行失败"
 fi
 
-# 测试5.3: 日志收集
+# 测试5.3: 日志收集功能
 print_test "日志收集功能"
-LOG_COUNT=$(python3 log-manager/log_cli.py list 2>/dev/null | grep -c "\.log" || true)
+# 先收集Docker容器日志到logs目录
+mkdir -p logs
+docker compose logs --tail=100 wiki-js 2>/dev/null > logs/wiki-js.log || true
+docker compose logs --tail=100 nginx 2>/dev/null > logs/nginx.log || true
+docker compose logs --tail=50 postgres 2>/dev/null > logs/postgres.log || true
+LOG_COUNT=$($PYTHON_CMD log-manager/log_cli.py list 2>/dev/null | grep -c "\.log" || true)
 LOG_COUNT=$(echo "$LOG_COUNT" | tr -d '[:space:]' | head -1)
 if [ -n "$LOG_COUNT" ] && [ "$LOG_COUNT" -gt 0 ] 2>/dev/null; then
     echo -e "${GREEN}✓${NC} 收集到${LOG_COUNT}个日志文件"

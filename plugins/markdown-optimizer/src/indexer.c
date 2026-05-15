@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <ctype.h>
 
 // 最大词汇量
 #define MAX_VOCAB_SIZE 100000

@@ -5,6 +5,14 @@
 """
 
 import sys
+import os
+
+# 设置UTF-8输出编码（解决Windows下GBK编码问题）
+if sys.stdout.encoding != 'utf-8':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
