@@ -52,6 +52,18 @@
 - **磁盘**: 建议 10GB+ (含数据备份)
 - **IPv6**: 可选，但推荐启用
 
+### 💻 跨平台说明
+
+**Windows用户注意：**
+
+本项目提供两种测试脚本：
+- **PowerShell版本**: `scripts/run-all-tests.ps1` - 适用于Windows
+- **Bash版本**: `scripts/run-all-tests.sh` - 适用于WSL/Linux/macOS
+
+**性能建议：**
+- 🚀 **最佳性能**: 将项目放在WSL文件系统（~/projects/）而非Windows盘（/mnt/f/）
+- 📖 详细配置指南: [docs/CROSS_PLATFORM_SETUP.md](docs/CROSS_PLATFORM_SETUP.md)
+
 ## 🚀 快速开始
 
 ### 1. 克隆项目
