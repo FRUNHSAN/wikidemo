@@ -1,0 +1,52 @@
+{
+  "name": "技术资讯RSS阅读器",
+  "version": "1.0.0",
+  "description": "自动抓取技术资讯RSS源，使用AI生成摘要，按日期归档到Wiki",
+  "author": "Wiki.js Plugin System",
+  "enabled": true,
+  "dependencies": [
+    "feedparser",
+    "requests"
+  ],
+  "config": {
+    "rss_sources": [
+      {
+        "name": "Hacker News",
+        "url": "https://hnrss.org/frontpage",
+        "category": "tech",
+        "max_items": 10
+      },
+      {
+        "name": "GitHub Trending",
+        "url": "https://github.com/trending.rss",
+        "category": "opensource",
+        "max_items": 8
+      },
+      {
+        "name": "Reddit Programming",
+        "url": "https://www.reddit.com/r/programming/.rss",
+        "category": "community",
+        "max_items": 8
+      },
+      {
+        "name": "Lobsters",
+        "url": "https://lobste.rs/rss",
+        "category": "tech",
+        "max_items": 8
+      }
+    ],
+    "update_interval": "1h",
+    "ai_summary_enabled": true,
+    "ai_provider": "openai",
+    "max_tokens_per_summary": 150,
+    "output_path": "rss-digest/{date}",
+    "keep_days": 30
+  },
+  "tasks": [
+    {
+      "id": "hourly_update",
+      "interval": "1h",
+      "method": "execute"
+    }
+  ]
+}

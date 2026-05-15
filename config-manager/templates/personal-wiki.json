@@ -1,0 +1,34 @@
+{
+  "name": "个人Wiki基础配置",
+  "description": "适合个人使用的Wiki系统，包含RSS阅读器和Obsidian同步",
+  "version": "1.0",
+  "configs": {
+    "env": {
+      "POSTGRES_PASSWORD": "wikipassword123",
+      "GIT_SYNC_ENABLED": false,
+      "OPENAI_API_KEY": ""
+    },
+    "plugins": {
+      "plugins": {
+        "rss-reader": {
+          "enabled": true
+        },
+        "daily-digest": {
+          "enabled": false
+        },
+        "web-scraper": {
+          "enabled": false
+        }
+      }
+    },
+    "sync": {
+      "local_folder": "./obsidian-vault",
+      "default_sync_strategy": "auto_confirm",
+      "file_type_filters": {
+        "enabled": true,
+        "allowed_types": [".md"],
+        "max_file_size_mb": 10
+      }
+    }
+  }
+}

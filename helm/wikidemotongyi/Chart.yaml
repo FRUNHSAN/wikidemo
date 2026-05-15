@@ -1,0 +1,19 @@
+apiVersion: v2
+name: wikidemotongyi
+description: A Helm chart for WikiDemoTongYi - Enhanced Wiki.js with cloud-native features
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - wiki
+  - knowledge-base
+  - wiki.js
+  - obsidian
+  - rss
+home: https://github.com/wikidemotongyi/wikidemotongyi
+sources:
+  - https://github.com/wikidemotongyi/wikidemotongyi
+maintainers:
+  - name: WikiDemoTongYi Team
+    email: team@wikidemotongyi.com
+icon: https://wiki.js.org/logo.svg

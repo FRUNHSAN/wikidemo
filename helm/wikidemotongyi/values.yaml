@@ -1,0 +1,154 @@
+# ==========================================
+# WikiDemoTongYi Helm Chart Values
+# ==========================================
+
+# 全局配置
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Wiki.js配置
+wiki:
+  replicaCount: 1
+  image:
+    repository: requarks/wiki
+    tag: "2"
+    pullPolicy: IfNotPresent
+  
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  
+  service:
+    type: ClusterIP
+    port: 3000
+  
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - host: wiki.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: wiki-tls-secret
+        hosts:
+          - wiki.example.com
+
+# PostgreSQL配置
+postgresql:
+  enabled: true  # 设置为false使用外部数据库
+  image:
+    repository: postgres
+    tag: "15-alpine"
+  
+  auth:
+    database: wikidb
+    username: wikiuser
+    password: wikipassword123
+  
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+    
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+# Nginx配置
+nginx:
+  replicaCount: 1
+  image:
+    repository: nginx
+    tag: alpine
+    pullPolicy: IfNotPresent
+  
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  
+  service:
+    type: LoadBalancer
+    port: 80
+    nodePort: ""
+
+# 插件管理器配置
+pluginManager:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: python
+    tag: "3.11-slim"
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  # 启用的插件列表
+  plugins:
+    - name: rss-reader
+      enabled: true
+      image: wikidemotongyi/plugin-rss-reader:latest
+    - name: obsidian-sync
+      enabled: false
+      image: wikidemotongyi/plugin-obsidian-sync:latest
+
+# 配置管理器配置
+configManager:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: python
+    tag: "3.11-slim"
+  
+  service:
+    type: ClusterIP
+    port: 5000
+  
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# 监控配置
+monitoring:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+
+# 日志配置
+logging:
+  enabled: true
+  retentionDays: 30
+  maxSize: 100Mi
+
+# 备份配置
+backup:
+  enabled: false
+  schedule: "0 2 * * *"  # 每天凌晨2点
+  retention: 7  # 保留7天

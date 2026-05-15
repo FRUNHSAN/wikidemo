@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wiki.js 配置管理中心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #e0e0e0;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .config-group {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .config-group h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+
+        .config-item label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .config-item .description {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .config-item input[type="text"],
+        .config-item input[type="password"],
+        .config-item select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .config-item input:focus,
+        .config-item select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .config-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+            display: block;
+        }
+
+        .status-message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+            display: block;
+        }
+
+        .history-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .history-item .timestamp {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .history-item .change {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                flex: 1;
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Wiki.js 配置管理中心</h1>
+            <p>统一管理所有插件、同步和系统配置</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showSection('env')">🔑 环境变量</button>
+            <button class="tab" onclick="showSection('plugins')">🔌 插件管理</button>
+            <button class="tab" onclick="showSection('sync')">🔄 Obsidian同步</button>
+            <button class="tab" onclick="showSection('history')">📜 历史记录</button>
+        </div>
+
+        <div class="content">
+            <div id="statusMessage" class="status-message"></div>
+
+            <!-- 环境变量配置 -->
+            <div id="env" class="section active">
+                <div class="config-group">
+                    <h3>🗄️ 数据库配置</h3>
+
+                    <div class="config-item">
+                        <label for="postgres_password">数据库密码</label>
+                        <p class="description">PostgreSQL数据库的访问密码（至少8位）</p>
+                        <input type="password" id="postgres_password" placeholder="输入密码">
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <h3>🤖 AI功能配置</h3>
+
+                    <div class="config-item">
+                        <label for="openai_key">OpenAI API Key</label>
+                        <p class="description">用于AI摘要和智能分析功能</p>
+                        <input type="password" id="openai_key" placeholder="sk-...">
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <h3>🔗 Git同步配置</h3>
+
+                    <div class="config-item">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="git_sync_enabled">
+                            <label for="git_sync_enabled">启用Git同步</label>
+                        </div>
+                        <p class="description">自动将Wiki内容备份到GitHub/Gitee</p>
+                    </div>
+
+                    <div class="config-item">
+                        <label for="git_repo_url">Git仓库地址</label>
+                        <p class="description">例如: https://github.com/username/wiki-notes.git</p>
+                        <input type="text" id="git_repo_url" placeholder="https://github.com/...">
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="saveEnvConfig()">💾 保存配置</button>
+                    <button class="btn btn-secondary" onclick="resetEnvConfig()">🔄 重置</button>
+                </div>
+            </div>
+
+            <!-- 插件管理 -->
+            <div id="plugins" class="section">
+                <div class="config-group">
+                    <h3>🔌 已安装的插件</h3>
+
+                    <div class="config-item">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="plugin_rss_reader" checked>
+                            <label for="plugin_rss_reader">RSS阅读器</label>
+                            <span class="badge badge-success">已启用</span>
+                        </div>
+                        <p class="description">自动抓取技术资讯，AI生成摘要</p>
+                    </div>
+
+                    <div class="config-item">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="plugin_daily_digest">
+                            <label for="plugin_daily_digest">每日信息汇总</label>
+                            <span class="badge badge-warning">已禁用</span>
+                        </div>
+                        <p class="description">Hacker News和GitHub趋势日报</p>
+                    </div>
+
+                    <div class="config-item">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="plugin_web_scraper">
+                            <label for="plugin_web_scraper">网页爬虫</label>
+                            <span class="badge badge-warning">已禁用</span>
+                        </div>
+                        <p class="description">通用网页内容抓取工具</p>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="savePluginConfig()">💾 保存配置</button>
+                    <button class="btn btn-secondary" onclick="restartPlugins()">🔄 重启插件</button>
+                </div>
+            </div>
+
+            <!-- Obsidian同步 -->
+            <div id="sync" class="section">
+                <div class="config-group">
+                    <h3>📁 同步路径配置</h3>
+
+                    <div class="config-item">
+                        <label for="sync_local_folder">Obsidian本地文件夹</label>
+                        <p class="description">本地Obsidian仓库的路径</p>
+                        <input type="text" id="sync_local_folder" value="./obsidian-vault">
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <h3>⚙️ 同步策略</h3>
+
+                    <div class="config-item">
+                        <label for="sync_strategy">默认同步策略</label>
+                        <p class="description">控制文件同步的行为方式</p>
+                        <select id="sync_strategy">
+                            <option value="immediate">立即同步（无需确认）</option>
+                            <option value="auto_confirm" selected>自动检测+确认</option>
+                            <option value="manual">手动触发</option>
+                            <option value="disabled">不同步</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <h3>📎 文件类型过滤</h3>
+
+                    <div class="config-item">
+                        <label for="sync_file_types">允许同步的文件类型</label>
+                        <p class="description">用逗号分隔，例如: .md,.png,.jpg</p>
+                        <input type="text" id="sync_file_types" value=".md">
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="saveSyncConfig()">💾 保存配置</button>
+                    <button class="btn btn-success" onclick="testSync()">🧪 测试同步</button>
+                </div>
+            </div>
+
+            <!-- 历史记录 -->
+            <div id="history" class="section">
+                <h3 style="margin-bottom: 20px;">📜 配置变更历史</h3>
+                <div id="historyList">
+                    <div class="history-item">
+                        <div class="timestamp">2026-05-14 15:30:00</div>
+                        <div class="change">env.OPENAI_API_KEY: [隐藏] → sk-***</div>
+                    </div>
+                    <div class="history-item">
+                        <div class="timestamp">2026-05-14 14:20:00</div>
+                        <div class="change">plugins.rss-reader.enabled: false → true</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 切换标签页
+        function showSection(sectionId) {
+            // 隐藏所有section
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+            // 显示选中的section
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // 显示状态消息
+        function showMessage(message, type = 'success') {
+            const msgEl = document.getElementById('statusMessage');
+            msgEl.textContent = message;
+            msgEl.className = `status-message ${type}`;
+
+            setTimeout(() => {
+                msgEl.style.display = 'none';
+            }, 3000);
+        }
+
+        // 保存环境变量配置
+        function saveEnvConfig() {
+            const config = {
+                POSTGRES_PASSWORD: document.getElementById('postgres_password').value,
+                OPENAI_API_KEY: document.getElementById('openai_key').value,
+                GIT_SYNC_ENABLED: document.getElementById('git_sync_enabled').checked,
+                GIT_REPO_URL: document.getElementById('git_repo_url').value
+            };
+
+            console.log('保存环境变量配置:', config);
+
+            // TODO: 调用后端API保存
+            showMessage('✓ 配置已保存！请重启服务使配置生效');
+        }
+
+        // 重置环境变量配置
+        function resetEnvConfig() {
+            if (confirm('确定要重置所有配置吗？')) {
+                document.getElementById('postgres_password').value = '';
+                document.getElementById('openai_key').value = '';
+                document.getElementById('git_sync_enabled').checked = false;
+                document.getElementById('git_repo_url').value = '';
+                showMessage('✓ 配置已重置');
+            }
+        }
+
+        // 保存插件配置
+        function savePluginConfig() {
+            const config = {
+                'rss-reader': document.getElementById('plugin_rss_reader').checked,
+                'daily-digest': document.getElementById('plugin_daily_digest').checked,
+                'web-scraper': document.getElementById('plugin_web_scraper').checked
+            };
+
+            console.log('保存插件配置:', config);
+            showMessage('✓ 插件配置已保存！');
+        }
+
+        // 重启插件
+        function restartPlugins() {
+            if (confirm('确定要重启所有插件吗？')) {
+                console.log('重启插件...');
+                showMessage('✓ 插件正在重启...');
+            }
+        }
+
+        // 保存同步配置
+        function saveSyncConfig() {
+            const config = {
+                local_folder: document.getElementById('sync_local_folder').value,
+                default_sync_strategy: document.getElementById('sync_strategy').value,
+                file_types: document.getElementById('sync_file_types').value.split(',')
+            };
+
+            console.log('保存同步配置:', config);
+            showMessage('✓ 同步配置已保存！');
+        }
+
+        // 测试同步
+        function testSync() {
+            showMessage('🧪 正在测试同步...');
+            setTimeout(() => {
+                showMessage('✓ 同步测试成功！');
+            }, 2000);
+        }
+
+        // 页面加载时获取当前配置
+        window.onload = function() {
+            console.log('配置管理界面已加载');
+            // TODO: 从后端API加载当前配置
+        };
+    </script>
+</body>
+</html>

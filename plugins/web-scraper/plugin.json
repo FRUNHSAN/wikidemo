@@ -1,0 +1,32 @@
+{
+  "name": "通用网页爬虫",
+  "version": "1.0.0",
+  "description": "可配置的网页爬虫，支持自定义URL和提取规则",
+  "author": "Wiki.js Plugin System",
+  "enabled": false,
+  "dependencies": [
+    "requests",
+    "beautifulsoup4",
+    "lxml"
+  ],
+  "config": {
+    "targets": [
+      {
+        "name": "示例网站",
+        "url": "https://example.com",
+        "selector": "article",
+        "extract_fields": ["title", "content", "date"],
+        "interval": "6h"
+      }
+    ],
+    "output_format": "markdown",
+    "save_to_wiki": true
+  },
+  "tasks": [
+    {
+      "id": "scrape_task",
+      "interval": "6h",
+      "method": "execute"
+    }
+  ]
+}

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日志管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        header h1 { color: #333; font-size: 24px; }
+        header p { color: #666; font-size: 14px; margin-top: 5px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .stat-card h3 { color: #667eea; font-size: 14px; margin-bottom: 10px; }
+        .stat-card .value { font-size: 28px; font-weight: bold; color: #333; }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: none;
+        }
+        .panel.active { display: block; }
+
+        .log-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .log-item:hover { background: #f9f9f9; }
+        .log-item .name { font-weight: 600; color: #333; }
+        .log-item .meta { font-size: 12px; color: #999; margin-top: 5px; }
+
+        .log-content {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 600px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-secondary { background: #f5f5f5; color: #333; }
+
+        .search-results {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .search-result-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+        .search-result-item .file { color: #667eea; font-weight: 600; }
+        .search-result-item .line-num { color: #999; font-size: 12px; }
+        .search-result-item .content { color: #333; margin-top: 5px; }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 日志管理系统</h1>
+            <p>查看、搜索和管理系统日志</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>当前日志文件</h3>
+                <div class="value" id="currentLogCount">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>归档日志文件</h3>
+                <div class="value" id="archiveLogCount">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>总大小</h3>
+                <div class="value" id="totalSize">-</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showPanel('logs')">📄 日志列表</button>
+            <button class="tab" onclick="showPanel('search')">🔍 搜索日志</button>
+            <button class="tab" onclick="showPanel('manage')">⚙️ 日志管理</button>
+        </div>
+
+        <!-- 日志列表面板 -->
+        <div id="logs" class="panel active">
+            <h3 style="margin-bottom: 15px;">日志文件列表</h3>
+            <div class="log-list" id="logList">
+                <p style="text-align: center; color: #999; padding: 40px;">加载中...</p>
+            </div>
+
+            <div id="logViewer" style="margin-top: 20px; display: none;">
+                <h4 id="logTitle" style="margin-bottom: 10px;"></h4>
+                <div class="log-content" id="logContent"></div>
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="loadMoreLogs()">加载更多</button>
+                    <button class="btn btn-secondary" onclick="closeLogViewer()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 搜索面板 -->
+        <div id="search" class="panel">
+            <h3 style="margin-bottom: 15px;">搜索日志内容</h3>
+            <div class="search-box">
+                <input type="text" id="searchKeyword" placeholder="输入关键词..." onkeypress="if(event.key==='Enter') searchLogs()">
+                <button class="btn btn-primary" onclick="searchLogs()">搜索</button>
+            </div>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <!-- 管理面板 -->
+        <div id="manage" class="panel">
+            <h3 style="margin-bottom: 15px;">日志管理操作</h3>
+
+            <div style="padding: 20px; background: #f9f9f9; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="margin-bottom: 10px;">轮转日志</h4>
+                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">
+                    将大于1MB的日志文件压缩归档，释放空间
+                </p>
+                <button class="btn btn-primary" onclick="rotateLogs(false)">立即轮转</button>
+                <button class="btn btn-secondary" onclick="rotateLogs(true)">预览</button>
+            </div>
+
+            <div style="padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                <h4 style="margin-bottom: 10px;">清理旧日志</h4>
+                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">
+                    删除指定天数前的归档日志
+                </p>
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                    <label>保留天数:</label>
+                    <input type="number" id="cleanupDays" value="30" min="1" max="365"
+                           style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100px;">
+                </div>
+                <button class="btn btn-danger" onclick="cleanupLogs(false)">立即清理</button>
+                <button class="btn btn-secondary" onclick="cleanupLogs(true)">预览</button>
+            </div>
+
+            <div id="operationResult" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentLogFile = null;
+        let logOffset = 0;
+
+        // 切换面板
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(panelId).classList.add('active');
+            event.target.classList.add('active');
+
+            if (panelId === 'logs') loadLogList();
+        }
+
+        // 加载统计信息
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/logs/stats');
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('currentLogCount').textContent = data.stats.current_logs.count;
+                    document.getElementById('archiveLogCount').textContent = data.stats.archived_logs.count;
+                    document.getElementById('totalSize').textContent = data.stats.total_size;
+                }
+            } catch (error) {
+                console.error('加载统计失败:', error);
+            }
+        }
+
+        // 加载日志列表
+        async function loadLogList() {
+            try {
+                const response = await fetch('/api/logs');
+                const data = await response.json();
+
+                const logList = document.getElementById('logList');
+
+                if (data.success && data.files.length > 0) {
+                    logList.innerHTML = data.files.map(file => `
+                        <div class="log-item" onclick="viewLog('${file.filename}')">
+                            <div class="name">${file.filename}</div>
+                            <div class="meta">
+                                ${file.size_human} | ${file.line_count} 行 | 
+                                更新于 ${new Date(file.modified_at).toLocaleString('zh-CN')}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    logList.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">暂无日志文件</p>';
+                }
+            } catch (error) {
+                console.error('加载日志列表失败:', error);
+            }
+        }
+
+        // 查看日志
+        async function viewLog(filename, append = false) {
+            if (!append) {
+                currentLogFile = filename;
+                logOffset = 0;
+                document.getElementById('logViewer').style.display = 'block';
+                document.getElementById('logTitle').textContent = filename;
+                document.getElementById('logContent').textContent = '加载中...';
+            }
+
+            try {
+                const response = await fetch(`/api/logs/${filename}?lines=100&offset=${logOffset}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const content = data.lines.join('');
+                    if (append) {
+                        document.getElementById('logContent').textContent += content;
+                    } else {
+                        document.getElementById('logContent').textContent = content;
+                    }
+                    logOffset += data.returned_lines;
+                }
+            } catch (error) {
+                console.error('加载日志失败:', error);
+            }
+        }
+
+        // 加载更多
+        function loadMoreLogs() {
+            if (currentLogFile) {
+                viewLog(currentLogFile, true);
+            }
+        }
+
+        // 关闭查看器
+        function closeLogViewer() {
+            document.getElementById('logViewer').style.display = 'none';
+            currentLogFile = null;
+            logOffset = 0;
+        }
+
+        // 搜索日志
+        async function searchLogs() {
+            const keyword = document.getElementById('searchKeyword').value.trim();
+            if (!keyword) {
+                alert('请输入搜索关键词');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '<p style="text-align: center; color: #999;">搜索中...</p>';
+
+            try {
+                const response = await fetch(`/api/logs/search?keyword=${encodeURIComponent(keyword)}`);
+                const data = await response.json();
+
+                if (data.success && data.results.length > 0) {
+                    resultsDiv.innerHTML = `
+                        <p style="margin-bottom: 15px; color: #666;">找到 ${data.count} 条结果</p>
+                        ${data.results.map(r => `
+                            <div class="search-result-item">
+                                <div class="file">${r.filename} <span class="line-num">第 ${r.line_num} 行</span></div>
+                                <div class="content">${r.content}</div>
+                            </div>
+                        `).join('')}
+                    `;
+                } else {
+                    resultsDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">未找到匹配结果</p>';
+                }
+            } catch (error) {
+                console.error('搜索失败:', error);
+            }
+        }
+
+        // 轮转日志
+        async function rotateLogs(dryRun) {
+            const action = dryRun ? '预览' : '执行';
+            if (!dryRun && !confirm(`确定要${action}日志轮转吗？`)) return;
+
+            try {
+                const response = await fetch(`/api/logs/rotate?dry_run=${dryRun}`, { method: 'POST' });
+                const data = await response.json();
+
+                showOperationResult(data, dryRun ? '轮转预览' : '轮转结果');
+                loadStats();
+                loadLogList();
+            } catch (error) {
+                console.error('操作失败:', error);
+            }
+        }
+
+        // 清理日志
+        async function cleanupLogs(dryRun) {
+            const days = document.getElementById('cleanupDays').value;
+            const action = dryRun ? '预览' : '执行';
+            if (!dryRun && !confirm(`确定要${action}清理${days}天前的日志吗？`)) return;
+
+            try {
+                const response = await fetch(`/api/logs/cleanup?days=${days}&dry_run=${dryRun}`, { method: 'POST' });
+                const data = await response.json();
+
+                showOperationResult(data, dryRun ? '清理预览' : '清理结果');
+                loadStats();
+            } catch (error) {
+                console.error('操作失败:', error);
+            }
+        }
+
+        // 显示操作结果
+        function showOperationResult(data, title) {
+            const resultDiv = document.getElementById('operationResult');
+            resultDiv.innerHTML = `
+                <div style="padding: 20px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #10b981;">
+                    <h4 style="margin-bottom: 10px; color: #065f46;">${title}</h4>
+                    <pre style="white-space: pre-wrap; font-size: 13px; color: #333;">${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            loadStats();
+            loadLogList();
+        };
+    </script>
+</body>
+</html>

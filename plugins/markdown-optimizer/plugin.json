@@ -1,0 +1,84 @@
+{
+  "id": "markdown-optimizer",
+  "name": "Markdown Optimizer",
+  "version": "1.0.0",
+  "description": "高性能Markdown处理引擎 - C语言实现，提供极速解析、索引、去重功能",
+  "author": "WikiDemoTongYi Team",
+  "license": "MIT",
+  "repository": "https://github.com/wikidemotongyi/plugin-markdown-optimizer",
+  
+  "category": "performance",
+  "tags": ["markdown", "performance", "c-language", "optimization", "indexing"],
+  
+  "min_wiki_version": "2.5.0",
+  
+  "language": "C",
+  "entrypoint": "./markdown-optimizer",
+  
+  "ports": [8080],
+  
+  "environment": [
+    {
+      "name": "LOG_LEVEL",
+      "required": false,
+      "default": "INFO",
+      "description": "日志级别 (DEBUG/INFO/WARN/ERROR)"
+    },
+    {
+      "name": "MAX_THREADS",
+      "required": false,
+      "default": "4",
+      "description": "最大线程数"
+    },
+    {
+      "name": "CACHE_SIZE_MB",
+      "required": false,
+      "default": "64",
+      "description": "缓存大小(MB)"
+    }
+  ],
+  
+  "volumes": [
+    "/app/data",
+    "/app/logs"
+  ],
+  
+  "resources": {
+    "cpu_limit": "1.0",
+    "memory_limit": "128M"
+  },
+  
+  "health_check": {
+    "endpoint": "/health",
+    "interval": 30,
+    "timeout": 5
+  },
+  
+  "api_endpoints": [
+    {
+      "path": "/api/parse",
+      "method": "POST",
+      "description": "Markdown转HTML（高性能）"
+    },
+    {
+      "path": "/api/index",
+      "method": "POST",
+      "description": "构建全文索引"
+    },
+    {
+      "path": "/api/search",
+      "method": "GET",
+      "description": "全文搜索"
+    },
+    {
+      "path": "/api/dedup",
+      "method": "POST",
+      "description": "内容去重检测"
+    },
+    {
+      "path": "/api/benchmark",
+      "method": "POST",
+      "description": "性能基准测试"
+    }
+  ]
+}

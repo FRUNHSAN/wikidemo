@@ -1,0 +1,34 @@
+{
+  "local_folder": "./obsidian-vault",
+  "wiki_base_url": "http://localhost",
+  "wiki_api_token": "your-wiki-api-token-here",
+  "default_sync_strategy": "auto_confirm",
+  "default_conflict_resolution": "draft_merge",
+  "file_type_filters": {
+    "enabled": true,
+    "allowed_types": [".md"],
+    "max_file_size_mb": 10
+  },
+  "sync_rules": [
+    {
+      "path_pattern": "daily-notes/",
+      "strategy": "immediate",
+      "file_types": [".md"]
+    },
+    {
+      "path_pattern": "projects/",
+      "strategy": "auto_confirm",
+      "file_types": [".md", ".png", ".jpg"]
+    },
+    {
+      "path_pattern": "private/",
+      "strategy": "disabled"
+    }
+  ],
+  "excluded_paths": [
+    ".git/",
+    ".obsidian/",
+    "templates/",
+    "trash/"
+  ]
+}

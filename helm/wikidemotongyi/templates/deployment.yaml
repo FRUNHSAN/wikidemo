@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "wikidemotongyi.fullname" . }}-wiki
+  labels:
+    {{- include "wikidemotongyi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: wiki
+spec:
+  replicas: {{ .Values.wiki.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "wikidemotongyi.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: wiki
+  template:
+    metadata:
+      labels:
+        {{- include "wikidemotongyi.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: wiki
+    spec:
+      containers:
+        - name: wiki
+          image: "{{ .Values.wiki.image.repository }}:{{ .Values.wiki.image.tag }}"
+          imagePullPolicy: {{ .Values.wiki.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: DB_TYPE
+              value: postgres
+            - name: DB_HOST
+              value: {{ .Release.Name }}-postgresql
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              value: {{ .Values.postgresql.auth.username }}
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql
+                  key: password
+            - name: DB_NAME
+              value: {{ .Values.postgresql.auth.database }}
+          resources:
+            {{- toYaml .Values.wiki.resources | nindent 12 }}

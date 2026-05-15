@@ -1,0 +1,36 @@
+{
+  "name": "团队协作配置",
+  "description": "适合小团队使用，启用多个插件和Git同步",
+  "version": "1.0",
+  "configs": {
+    "env": {
+      "POSTGRES_PASSWORD": "secure-password-2026",
+      "GIT_SYNC_ENABLED": true,
+      "GIT_REPO_URL": "https://github.com/team/wiki-notes.git",
+      "OPENAI_API_KEY": ""
+    },
+    "plugins": {
+      "plugins": {
+        "rss-reader": {
+          "enabled": true
+        },
+        "daily-digest": {
+          "enabled": true
+        },
+        "web-scraper": {
+          "enabled": true
+        }
+      }
+    },
+    "sync": {
+      "local_folder": "./shared-vault",
+      "default_sync_strategy": "immediate",
+      "file_type_filters": {
+        "enabled": true,
+        "allowed_types": [".md", ".png", ".jpg"],
+        "max_file_size_mb": 20
+      },
+      "excluded_paths": ["private/", "drafts/"]
+    }
+  }
+}

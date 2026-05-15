@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plugin-manager
+  namespace: wiki-system
+  labels:
+    app.kubernetes.io/name: plugin-manager
+    app.kubernetes.io/component: plugins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: plugin-manager
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: plugin-manager
+        app.kubernetes.io/component: plugins
+    spec:
+      containers:
+      - name: plugin-manager
+        image: python:3.11-slim
+        command: ["sh", "-c"]
+        args:
+        - |
+          pip install --no-cache-dir -r /app/requirements.txt &&
+          mkdir -p /app/logs &&
+          python /app/plugins/core/plugin_manager.py
+        workingDir: /app
+        env:
+        - name: WIKI_API_URL
+          value: http://wiki:3000/api
+        - name: WIKI_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: wiki-secrets
+              key: WIKI_API_TOKEN
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi

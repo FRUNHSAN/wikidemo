@@ -1,0 +1,30 @@
+# Wiki.js 插件和配置管理依赖
+# 使用方法: pip install -r requirements.txt
+
+# HTTP请求
+requests>=2.31.0
+
+# RSS解析
+feedparser>=6.0.10
+
+# HTML解析
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# AI集成
+openai>=1.0.0
+
+# Web框架
+flask>=3.0.0
+
+# YAML支持
+pyyaml>=6.0.0
+
+# 任务调度
+schedule>=1.2.0
+
+# 环境变量
+python-dotenv>=1.0.0
+
+# 文件监听（可选，用于实时同步）
+watchdog>=3.0.0

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-manager
+  namespace: wiki-system
+  labels:
+    app.kubernetes.io/name: config-manager
+    app.kubernetes.io/component: configuration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: config-manager
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: config-manager
+        app.kubernetes.io/component: configuration
+    spec:
+      containers:
+      - name: config-manager
+        image: python:3.11-slim
+        command: ["sh", "-c"]
+        args:
+        - |
+          pip install --no-cache-dir -r /app/requirements.txt &&
+          mkdir -p /app/logs &&
+          python /app/config-manager/web_server.py
+        workingDir: /app
+        ports:
+        - containerPort: 5000
+          name: http
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi

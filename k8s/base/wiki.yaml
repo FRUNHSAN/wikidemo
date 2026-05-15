@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wiki
+  namespace: wiki-system
+  labels:
+    app.kubernetes.io/name: wiki
+    app.kubernetes.io/component: application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wiki
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: wiki
+        app.kubernetes.io/component: application
+    spec:
+      containers:
+      - name: wiki
+        image: requarks/wiki:2
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: DB_TYPE
+          value: postgres
+        - name: DB_HOST
+          value: postgresql
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: wikiuser
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: wiki-secrets
+              key: POSTGRES_PASSWORD
+        - name: DB_NAME
+          value: wikidb
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5

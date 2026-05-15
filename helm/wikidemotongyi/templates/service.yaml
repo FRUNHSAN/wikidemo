@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "wikidemotongyi.fullname" . }}-wiki
+  labels:
+    {{- include "wikidemotongyi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: wiki
+spec:
+  type: {{ .Values.wiki.service.type }}
+  ports:
+    - port: {{ .Values.wiki.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "wikidemotongyi.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: wiki

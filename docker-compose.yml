@@ -1,0 +1,205 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  db:
+    image: postgres:15-alpine
+    container_name: wiki-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-wikidb}
+      POSTGRES_USER: ${POSTGRES_USER:-wikiuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wikipassword123}
+      POSTGRES_HOST_AUTH_METHOD: md5
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - wiki-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wikiuser} -d ${POSTGRES_DB:-wikidb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Wiki.js主应用
+  wiki:
+    image: requarks/wiki:2
+    container_name: wiki-js
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-wikiuser}
+      DB_PASS: ${POSTGRES_PASSWORD:-wikipassword123}
+      DB_NAME: ${POSTGRES_DB:-wikidb}
+      # Git同步配置
+      GIT_SYNC_ENABLED: ${GIT_SYNC_ENABLED:-false}
+      GIT_REPO_URL: ${GIT_REPO_URL:-}
+      GIT_BRANCH: ${GIT_BRANCH:-main}
+      GIT_USERNAME: ${GIT_USERNAME:-}
+      GIT_TOKEN: ${GIT_TOKEN:-}
+      GIT_SYNC_INTERVAL: ${GIT_SYNC_INTERVAL:-30}
+      # 管理员配置
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+    volumes:
+      - wiki-data:/wiki/data
+      - wiki-assets:/wiki/assets
+      - ./plugins:/wiki/plugins:ro
+    networks:
+      - wiki-network
+    restart: unless-stopped
+    expose:
+      - "3000"
+
+  # Nginx反向代理（支持IPv6）
+  nginx:
+    image: nginx:alpine
+    container_name: wiki-nginx
+    depends_on:
+      - wiki
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - nginx-logs:/var/log/nginx
+    networks:
+      - wiki-network
+    restart: unless-stopped
+
+  # 插件管理器（可选，用于AI和自动化任务）
+  plugin-manager:
+    image: python:3.11-slim
+    container_name: wiki-plugin-manager
+    profiles:
+      - plugins
+    working_dir: /app
+    volumes:
+      - ./plugins:/app/plugins
+      - ./scripts:/app/scripts
+      - plugin-data:/app/data
+      - ./requirements.txt:/app/requirements.txt
+    environment:
+      WIKI_API_URL: http://wiki:3000/api
+      WIKI_API_TOKEN: ${WIKI_API_TOKEN:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      TZ: Asia/Shanghai
+    command: >
+      sh -c "
+        pip install --no-cache-dir -r /app/requirements.txt &&
+        mkdir -p /app/logs &&
+        python /app/plugins/core/plugin_manager.py
+      "
+    networks:
+      - wiki-network
+    restart: unless-stopped
+    depends_on:
+      - wiki
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # 配置管理器（集成到Wiki.js）
+  config-manager:
+    image: python:3.11-slim
+    container_name: wiki-config-manager
+    working_dir: /app
+    volumes:
+      - ./config-manager:/app/config-manager
+      - ./.env:/app/.env:ro
+      - ./plugins:/app/plugins:ro
+      - ./requirements.txt:/app/requirements.txt
+    environment:
+      TZ: Asia/Shanghai
+    command: >
+      sh -c "
+        pip install --no-cache-dir -r /app/requirements.txt &&
+        mkdir -p /app/logs &&
+        python /app/config-manager/web_server.py
+      "
+    networks:
+      - wiki-network
+    restart: unless-stopped
+    expose:
+      - "5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Markdown优化器插件（C语言高性能实现）
+  markdown-optimizer:
+    build:
+      context: ./plugins/markdown-optimizer
+      dockerfile: Dockerfile
+    image: wikidemotongyi/plugin-markdown-optimizer:latest
+    container_name: wiki-plugin-markdown-optimizer
+    profiles:
+      - plugins
+      - benchmark
+    environment:
+      - PORT=8080
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - MAX_THREADS=${MAX_THREADS:-4}
+      - CACHE_SIZE_MB=64
+      - TZ=Asia/Shanghai
+    volumes:
+      - plugin-markdown-data:/app/data
+      - plugin-logs:/app/logs
+    networks:
+      - wiki-network
+    restart: unless-stopped
+    expose:
+      - "8080"
+    labels:
+      - "wiki.plugin=true"
+      - "wiki.plugin.name=markdown-optimizer"
+      - "wiki.plugin.version=1.0.0"
+      - "wiki.plugin.language=C"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  db-data:
+    driver: local
+  wiki-data:
+    driver: local
+  wiki-assets:
+    driver: local
+  nginx-logs:
+    driver: local
+  plugin-data:
+    driver: local
+  plugin-markdown-data:
+    driver: local
+  plugin-logs:
+    driver: local
+
+networks:
+  wiki-network:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+        - subnet: fd00:wiki:net::/64

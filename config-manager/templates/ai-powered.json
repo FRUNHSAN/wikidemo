@@ -1,0 +1,32 @@
+{
+  "name": "AI增强配置",
+  "description": "启用所有AI功能，适合喜欢自动化资讯整理的用户",
+  "version": "1.0",
+  "configs": {
+    "env": {
+      "POSTGRES_PASSWORD": "wikipassword123",
+      "OPENAI_API_KEY": "sk-your-api-key-here",
+      "GIT_SYNC_ENABLED": true
+    },
+    "plugins": {
+      "plugins": {
+        "rss-reader": {
+          "enabled": true,
+          "config": {
+            "ai_summary_enabled": true,
+            "update_interval": "1h"
+          }
+        },
+        "daily-digest": {
+          "enabled": true
+        }
+      }
+    },
+    "sync": {
+      "default_sync_strategy": "immediate",
+      "file_type_filters": {
+        "allowed_types": [".md"]
+      }
+    }
+  }
+}

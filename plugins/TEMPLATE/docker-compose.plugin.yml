@@ -1,0 +1,104 @@
+# ==========================================
+# Wiki.js 插件 Docker Compose 模板
+# ==========================================
+# 使用说明：
+# 1. 复制此文件到插件根目录，命名为 docker-compose.yml
+# 2. 修改服务名称和配置
+# 3. 在根目录 docker-compose.yml 中引用此文件
+#
+# 引用方式（在根目录 docker-compose.yml 中）：
+# services:
+#   your-plugin:
+#     extends:
+#       file: plugins/your-plugin/docker-compose.yml
+#       service: plugin
+# ==========================================
+
+version: '3.8'
+
+services:
+  plugin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # 构建参数（可选）
+        - BUILD_DATE=${BUILD_DATE:-}
+        - VCS_REF=${VCS_REF:-}
+        - VERSION=${VERSION:-1.0.0}
+    
+    image: wikidemotongyi/plugin-${PLUGIN_NAME:-example}:latest
+    
+    container_name: wiki-plugin-${PLUGIN_NAME:-example}
+    
+    environment:
+      # 必需的环境变量
+      - PLUGIN_NAME=${PLUGIN_NAME:-example}
+      - PLUGIN_VERSION=${PLUGIN_VERSION:-1.0.0}
+      
+      # Wiki.js API 配置
+      - WIKI_API_URL=http://wiki:3000/api
+      - WIKI_API_TOKEN=${WIKI_API_TOKEN:-}
+      
+      # 插件特定配置（根据需求添加）
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TZ=Asia/Shanghai
+      
+      # OpenAI API（如果需要）
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    
+    volumes:
+      # 插件数据持久化
+      - plugin-${PLUGIN_NAME:-example}-data:/app/data
+      
+      # 日志持久化
+      - plugin-logs:/app/logs
+      
+      # 配置文件（只读）
+      - ./plugin.json:/app/plugin.json:ro
+    
+    networks:
+      - wiki-network
+    
+    restart: unless-stopped
+    
+    # 资源限制（防止单个插件占用过多资源）
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    
+    # 依赖关系
+    depends_on:
+      wiki:
+        condition: service_healthy
+    
+    # 标签（用于服务发现）
+    labels:
+      - "wiki.plugin=true"
+      - "wiki.plugin.name=${PLUGIN_NAME:-example}"
+      - "wiki.plugin.version=${PLUGIN_VERSION:-1.0.0}"
+      - "wiki.plugin.author=${PLUGIN_AUTHOR:-unknown}"
+      - "com.centurylinklabs.watchtower.enable=true"  # 自动更新
+
+volumes:
+  plugin-${PLUGIN_NAME:-example}-data:
+    driver: local
+  plugin-logs:
+    driver: local
+
+networks:
+  wiki-network:
+    external: true

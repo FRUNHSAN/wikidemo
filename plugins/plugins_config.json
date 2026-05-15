@@ -1,0 +1,29 @@
+{
+  "plugins": {
+    "rss-reader": {
+      "enabled": true,
+      "config": {
+        "ai_summary_enabled": true,
+        "update_interval": "1h"
+      }
+    },
+    "daily-digest": {
+      "enabled": false,
+      "config": {
+        "sources": [
+          "https://news.ycombinator.com",
+          "https://github.com/trending"
+        ],
+        "output_path": "daily-digest",
+        "schedule": "0 8 * * *"
+      }
+    },
+    "web-scraper": {
+      "enabled": false,
+      "config": {
+        "urls": [],
+        "interval": "6h"
+      }
+    }
+  }
+}

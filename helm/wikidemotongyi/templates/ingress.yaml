@@ -1,0 +1,39 @@
+{{- if .Values.wiki.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "wikidemotongyi.fullname" . }}
+  labels:
+    {{- include "wikidemotongyi.labels" . | nindent 4 }}
+  {{- with .Values.wiki.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.wiki.ingress.className }}
+  {{- if .Values.wiki.ingress.tls }}
+  tls:
+    {{- range .Values.wiki.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.wiki.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "wikidemotongyi.fullname" $ }}-wiki
+                port:
+                  number: {{ $.Values.wiki.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}

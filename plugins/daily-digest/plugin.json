@@ -1,0 +1,39 @@
+{
+  "name": "每日信息汇总",
+  "version": "1.0.0",
+  "description": "自动抓取指定网站内容，使用AI整理成每日信息汇总并发布到Wiki",
+  "author": "Wiki.js Plugin System",
+  "enabled": true,
+  "dependencies": [
+    "requests",
+    "beautifulsoup4",
+    "lxml"
+  ],
+  "config": {
+    "sources": [
+      {
+        "name": "Hacker News",
+        "url": "https://news.ycombinator.com",
+        "selector": ".titleline > a",
+        "type": "news"
+      },
+      {
+        "name": "GitHub Trending",
+        "url": "https://github.com/trending",
+        "selector": ".repo-list h2 a",
+        "type": "tech"
+      }
+    ],
+    "output_path": "daily-digest/{date}",
+    "schedule": "0 8 * * *",
+    "ai_enabled": true,
+    "ai_provider": "openai"
+  },
+  "tasks": [
+    {
+      "id": "daily_run",
+      "interval": "24h",
+      "method": "execute"
+    }
+  ]
+}

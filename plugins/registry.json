@@ -1,0 +1,111 @@
+{
+  "registry_version": "1.0.0",
+  "last_updated": "2026-05-15T00:00:00Z",
+  "plugins": [
+    {
+      "id": "rss-reader",
+      "name": "RSS Reader",
+      "version": "1.0.0",
+      "description": "自动抓取技术资讯并生成AI摘要",
+      "author": "WikiDemoTongYi Team",
+      "repository": "https://github.com/wikidemotongyi/plugin-rss-reader",
+      "image": "wikidemotongyi/plugin-rss-reader:latest",
+      "category": "content",
+      "tags": ["rss", "ai", "automation", "news"],
+      "status": "official",
+      "min_wiki_version": "2.5.0",
+      "resources": {
+        "cpu_limit": "0.5",
+        "memory_limit": "256M"
+      },
+      "environment_vars": [
+        {
+          "name": "OPENAI_API_KEY",
+          "required": false,
+          "description": "OpenAI API密钥，用于生成摘要"
+        }
+      ],
+      "volumes": [
+        "/app/data"
+      ],
+      "ports": [
+        8080
+      ]
+    },
+    {
+      "id": "obsidian-sync",
+      "name": "Obsidian Sync",
+      "version": "1.0.0",
+      "description": "Obsidian双向同步工具",
+      "author": "WikiDemoTongYi Team",
+      "repository": "https://github.com/wikidemotongyi/plugin-obsidian-sync",
+      "image": "wikidemotongyi/plugin-obsidian-sync:latest",
+      "category": "sync",
+      "tags": ["obsidian", "sync", "markdown"],
+      "status": "official",
+      "min_wiki_version": "2.5.0",
+      "resources": {
+        "cpu_limit": "0.3",
+        "memory_limit": "128M"
+      },
+      "environment_vars": [],
+      "volumes": [
+        "/app/data",
+        "/app/drafts"
+      ],
+      "ports": []
+    },
+    {
+      "id": "daily-digest",
+      "name": "Daily Digest",
+      "version": "0.1.0",
+      "description": "每日内容摘要汇总",
+      "author": "Community",
+      "repository": "",
+      "image": "",
+      "category": "automation",
+      "tags": ["digest", "summary", "email"],
+      "status": "community",
+      "min_wiki_version": "2.5.0",
+      "resources": {
+        "cpu_limit": "0.3",
+        "memory_limit": "128M"
+      },
+      "environment_vars": [],
+      "volumes": [],
+      "ports": []
+    }
+  ],
+  "categories": [
+    {
+      "id": "content",
+      "name": "内容管理",
+      "description": "内容抓取、生成、处理相关插件"
+    },
+    {
+      "id": "sync",
+      "name": "数据同步",
+      "description": "与其他系统的数据同步插件"
+    },
+    {
+      "id": "automation",
+      "name": "自动化",
+      "description": "定时任务和工作流自动化"
+    },
+    {
+      "id": "integration",
+      "name": "集成",
+      "description": "第三方服务集成"
+    },
+    {
+      "id": "security",
+      "name": "安全",
+      "description": "认证、授权、审计等安全相关"
+    },
+    {
+      "id": "analytics",
+      "name": "分析",
+      "description": "数据统计和分析"
+    }
+  ]
+}
