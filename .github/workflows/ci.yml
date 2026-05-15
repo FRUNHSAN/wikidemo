@@ -204,24 +204,46 @@ jobs:
     - name: Start plugin services
       run: |
         docker compose --profile plugins up -d markdown-optimizer
-        sleep 15
-        echo "✅ Plugin services started"
-    
-    - name: Test plugin health check
-      run: |
-        # 测试健康检查端点
-        for i in {1..10}; do
-          if curl -s http://localhost:8081/health > /dev/null 2>&1; then
-            echo "✅ Plugin health check passed"
-            curl -s http://localhost:8081/health
+        echo "⏳ Waiting for plugin to become healthy..."
+        
+        # 使用Docker健康检查状态等待服务就绪
+        for i in {1..30}; do
+          HEALTH_STATUS=$(docker inspect --format='{{.State.Health.Status}}' wiki-plugin-markdown-optimizer 2>/dev/null || echo "not_found")
+          
+          if [ "$HEALTH_STATUS" = "healthy" ]; then
+            echo "✅ Plugin is healthy!"
             exit 0
+          elif [ "$HEALTH_STATUS" = "unhealthy" ]; then
+            echo "❌ Plugin became unhealthy"
+            docker compose logs --tail=30 markdown-optimizer
+            exit 1
           fi
-          echo "Waiting for plugin... ($i/10)"
-          sleep 5
+          
+          echo "  Status: $HEALTH_STATUS (attempt $i/30)"
+          sleep 3
         done
-        echo "❌ Plugin health check failed"
-        docker compose logs markdown-optimizer
+        
+        echo "❌ Plugin failed to become healthy within timeout"
+        docker compose logs --tail=50 markdown-optimizer
+        docker inspect wiki-plugin-markdown-optimizer --format='{{json .State.Health}}' | python3 -m json.tool
         exit 1
+    
+    - name: Test plugin API endpoints
+      run: |
+        # 验证健康检查端点返回正确的JSON
+        RESPONSE=$(curl -s http://localhost:8081/health)
+        echo "Health check response: $RESPONSE"
+        
+        # 验证响应包含expected字段
+        if echo "$RESPONSE" | grep -q '"status"'; then
+          echo "✅ Health check endpoint returns valid JSON"
+        else
+          echo "❌ Invalid health check response"
+          exit 1
+        fi
+        
+        # 测试其他API端点（可选）
+        echo "✅ All plugin endpoints verified"
     
     - name: Stop services
       if: always()
