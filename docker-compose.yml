@@ -176,3 +176,28 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
+
+volumes:
+  db-data:
+    driver: local
+  wiki-data:
+    driver: local
+  wiki-assets:
+    driver: local
+  nginx-logs:
+    driver: local
+  plugin-data:
+    driver: local
+  plugin-markdown-data:
+    driver: local
+  plugin-logs:
+    driver: local
+
+networks:
+  wiki-network:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+        - subnet: fd00:1::/64
