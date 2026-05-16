@@ -1,4 +1,4 @@
-# Docker镜像加速器配置脚本 (PowerShell版本)
+﻿# Docker镜像加速器配置脚本 (PowerShell版本)
 # 用于解决中国大陆访问Docker Hub网络问题
 # 在Windows PowerShell中运行此脚本
 
