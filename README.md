@@ -9,6 +9,8 @@
 
 基于 [Wiki.js](https://wiki.js.org/) 构建的**功能增强型个人知识库系统**，支持IPv4/IPv6双栈访问，集成RSS阅读器、Obsidian双向同步、配置管理、日志管理等高级功能。**v1.0.0** 版本新增C语言高性能插件支持和完整的云原生架构！
 
+PS: This is a personal knowledge base in Chinese. Non-commercial use only.
+
 ## ✨ 核心特性
 
 ### 🏗️ 基础架构
