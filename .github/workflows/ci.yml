@@ -230,8 +230,33 @@ jobs:
     
     - name: Test plugin API endpoints
       run: |
+        echo "🔍 Testing plugin API endpoints..."
+        
+        # 首先检查端口是否监听
+        echo "Checking if port 8081 is accessible..."
+        for i in {1..5}; do
+          if curl -s --connect-timeout 2 http://localhost:8081/health > /dev/null 2>&1; then
+            echo "✅ Port 8081 is accessible"
+            break
+          fi
+          echo "  Waiting for port to be ready... ($i/5)"
+          sleep 2
+        done
+        
         # 验证健康检查端点返回正确的JSON
-        RESPONSE=$(curl -s http://localhost:8081/health)
+        echo "Fetching health check response..."
+        RESPONSE=$(curl -s --max-time 5 http://localhost:8081/health 2>&1) || {
+          echo "❌ Failed to connect to plugin service"
+          echo "Debug info:"
+          echo "- Docker container status:"
+          docker compose ps markdown-optimizer
+          echo "- Container logs (last 20 lines):"
+          docker compose logs --tail=20 markdown-optimizer
+          echo "- Port mapping:"
+          docker port wiki-plugin-markdown-optimizer 2>/dev/null || echo "Cannot get port info"
+          exit 1
+        }
+        
         echo "Health check response: $RESPONSE"
         
         # 验证响应包含expected字段
@@ -239,6 +264,7 @@ jobs:
           echo "✅ Health check endpoint returns valid JSON"
         else
           echo "❌ Invalid health check response"
+          echo "Expected JSON with 'status' field, got: $RESPONSE"
           exit 1
         fi
         
